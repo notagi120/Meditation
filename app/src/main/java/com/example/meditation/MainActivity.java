@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
         countdownDisplay = findViewById(R.id.countdown_display);
         // 以下の行で値を読み込む
         loadPreferences();
+        // Playボタンの状態を設定
+        updatePlayButtonState();
 
         // stopButtonのクリックリスナーでこのメソッドを呼び出します。
         stopButton.setOnClickListener(new View.OnClickListener() {
@@ -55,20 +57,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        playButton.setEnabled(false); // 初期状態ではplayボタンを無効化
-
         TextWatcher inputWatcher = new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                if (!breatheInInput.getText().toString().isEmpty() &&
-                        !breatheOutInput.getText().toString().isEmpty() &&
-                        !cycleInput.getText().toString().isEmpty()) {
-                    playButton.setEnabled(true); // すべて入力されている場合にplayボタンを有効化
-                    long totalTimeMillis = calculateTotalTimeMillis();
-                    totalTimeDisplay.setText(formatTime(totalTimeMillis / 1000));
-                } else {
-                    playButton.setEnabled(false);
-                }
+                updatePlayButtonState(); // Playボタンの状態を更新
+                long totalTimeMillis = calculateTotalTimeMillis();
+                totalTimeDisplay.setText(formatTime(totalTimeMillis / 1000));
+                // ここで入力値を保存
+                savePreferences();
             }
 
             @Override
@@ -151,6 +147,16 @@ public class MainActivity extends AppCompatActivity {
         cycleInput.setText(String.valueOf(cycle));
         preparationInput.setText(String.valueOf(preparation));
     }
+    private void updatePlayButtonState() {
+        if (!breatheInInput.getText().toString().isEmpty() &&
+                !breatheOutInput.getText().toString().isEmpty() &&
+                !cycleInput.getText().toString().isEmpty()) {
+            playButton.setEnabled(true); // すべて入力されている場合にplayボタンを有効化
+        } else {
+            playButton.setEnabled(false);
+        }
+    }
+
 
     private long calculateTotalTimeMillis() {
         float breatheInSec = Float.parseFloat(breatheInInput.getText().toString());
