@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
         countdownDisplay = findViewById(R.id.countdown_display);
         // 以下の行で値を読み込む
         loadPreferences();
+        long totalTimeMillis = calculateTotalTimeMillis();
+        totalTimeDisplay.setText(formatTime(totalTimeMillis / 1000));
         // Playボタンの状態を設定
         updatePlayButtonState();
 
