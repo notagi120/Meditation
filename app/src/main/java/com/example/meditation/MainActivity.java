@@ -189,13 +189,23 @@ public class MainActivity extends AppCompatActivity {
                 long breatheOutSec = (long) Float.parseFloat(breatheOutInput.getText().toString()) * 1000;
                 long cycleMillis = breatheInSec + breatheOutSec;
 
-                if ((totalTimeMillis - millisUntilFinished) % cycleMillis < breatheInSec) {
+                long timeInCurrentCycle = (totalTimeMillis - millisUntilFinished) % cycleMillis;
+
+                if (timeInCurrentCycle < breatheInSec) {
                     if (mediaPlayerBreatheOut.isPlaying()) {
                         mediaPlayerBreatheOut.pause();
                         mediaPlayerBreatheOut.seekTo(0); // 位置を先頭に戻す
                     }
                     if (!mediaPlayerBreatheIn.isPlaying()) {
                         mediaPlayerBreatheIn.start();
+                    }
+
+                    if (timeInCurrentCycle > breatheInSec - 5000) {
+                        // フェードアウトの開始
+                        float volume = (breatheInSec - timeInCurrentCycle) / 5000f;
+                        mediaPlayerBreatheIn.setVolume(volume, volume);
+                    } else {
+                        mediaPlayerBreatheIn.setVolume(1f, 1f);
                     }
                 } else {
                     if (mediaPlayerBreatheIn.isPlaying()) {
@@ -204,6 +214,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                     if (!mediaPlayerBreatheOut.isPlaying()) {
                         mediaPlayerBreatheOut.start();
+                    }
+
+                    if (timeInCurrentCycle > breatheInSec + breatheOutSec - 5000) {
+                        // フェードアウトの開始
+                        float volume = (breatheInSec + breatheOutSec - timeInCurrentCycle) / 5000f;
+                        mediaPlayerBreatheOut.setVolume(volume, volume);
+                    } else {
+                        mediaPlayerBreatheOut.setVolume(1f, 1f);
                     }
                 }
 
