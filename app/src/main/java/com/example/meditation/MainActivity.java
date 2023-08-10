@@ -125,15 +125,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //データ保存
+//データ保存
     private void savePreferences() {
         SharedPreferences sharedPreferences = getSharedPreferences("meditation", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putFloat("breathe_in", Float.parseFloat(breatheInInput.getText().toString()));
-        editor.putFloat("breathe_out", Float.parseFloat(breatheOutInput.getText().toString()));
-        editor.putInt("cycle", Integer.parseInt(cycleInput.getText().toString()));
-        editor.putFloat("preparation", Float.parseFloat(preparationInput.getText().toString()));
+        String breatheInStr = breatheInInput.getText().toString();
+        String breatheOutStr = breatheOutInput.getText().toString();
+        String cycleStr = cycleInput.getText().toString();
+        String preparationStr = preparationInput.getText().toString();
+
+        if (!breatheInStr.isEmpty()) {
+            editor.putFloat("breathe_in", Float.parseFloat(breatheInStr));
+        }
+        if (!breatheOutStr.isEmpty()) {
+            editor.putFloat("breathe_out", Float.parseFloat(breatheOutStr));
+        }
+        if (!cycleStr.isEmpty()) {
+            editor.putInt("cycle", Integer.parseInt(cycleStr));
+        }
+        if (!preparationStr.isEmpty()) {
+            editor.putFloat("preparation", Float.parseFloat(preparationStr));
+        }
+
         editor.apply();
     }
+
+    private long calculateTotalTimeMillis() {
+        try {
+            float breatheInSec = Float.parseFloat(breatheInInput.getText().toString());
+            float breatheOutSec = Float.parseFloat(breatheOutInput.getText().toString());
+            int cycles = Integer.parseInt(cycleInput.getText().toString());
+            return (long) ((breatheInSec + breatheOutSec) * cycles * 1000);
+        } catch (NumberFormatException e) {
+            return 0; // エラーが発生した場合は0を返す
+        }
+    }
+
     //データ読み取り
     private void loadPreferences() {
         SharedPreferences sharedPreferences = getSharedPreferences("meditation", MODE_PRIVATE);
@@ -157,13 +184,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    private long calculateTotalTimeMillis() {
-        float breatheInSec = Float.parseFloat(breatheInInput.getText().toString());
-        float breatheOutSec = Float.parseFloat(breatheOutInput.getText().toString());
-        int cycles = Integer.parseInt(cycleInput.getText().toString());
-        return (long) ((breatheInSec + breatheOutSec) * cycles * 1000);
-    }
 
     private void startBreathingCycle() {
         float preparationSec = Float.parseFloat(preparationInput.getText().toString());
