@@ -1,5 +1,7 @@
 package com.example.meditation;
 
+import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.Editable;
@@ -11,8 +13,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.SharedPreferences;
-
+import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
     private boolean isPlaying = false;
     private boolean isPaused = false;
@@ -20,6 +21,8 @@ public class MainActivity extends AppCompatActivity {
     private Button playButton, pauseButton, stopButton;
     private EditText breatheInInput, breatheOutInput, cycleInput, preparationInput;
     private TextView totalTimeDisplay, countdownDisplay;
+    private MediaPlayer mediaPlayerBreatheIn;
+    private MediaPlayer mediaPlayerBreatheOut;
 
     private CountDownTimer countDownTimer;
     private long remainingMillis;
@@ -28,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mediaPlayerBreatheIn = MediaPlayer.create(this, R.raw.up);
+        mediaPlayerBreatheOut = MediaPlayer.create(this, R.raw.down);
 
         playButton = findViewById(R.id.play_button);
         pauseButton = findViewById(R.id.pause_button);
@@ -40,6 +46,14 @@ public class MainActivity extends AppCompatActivity {
         countdownDisplay = findViewById(R.id.countdown_display);
         // 以下の行で値を読み込む
         loadPreferences();
+
+        // stopButtonのクリックリスナーでこのメソッドを呼び出します。
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetToInitialState();
+            }
+        });
 
         playButton.setEnabled(false); // 初期状態ではplayボタンを無効化
 
@@ -86,10 +100,12 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (isPlaying && !isPaused) {
                     countDownTimer.cancel(); // カウントダウンを一時停止
+                    mediaPlayerBreatheIn.pause();
+                    mediaPlayerBreatheOut.pause();
                     isPaused = true;
-                } else if (isPlaying && isPaused) {
-                    startCountdown(remainingMillis); // カウントダウンを再開
-                    isPaused = false;
+//                } else if (isPlaying && isPaused) {
+//                    startCountdown(remainingMillis); // カウントダウンを再開
+//                    isPaused = false;
                 }
             }
         });
@@ -99,6 +115,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (isPlaying) {
                     countDownTimer.cancel(); // カウントダウンを停止
+                    mediaPlayerBreatheIn.stop();
+                    mediaPlayerBreatheOut.stop();
+                    mediaPlayerBreatheIn.prepareAsync(); // 再生の準備
+                    mediaPlayerBreatheOut.prepareAsync();
                     isPlaying = false;
                     remainingMillis = 0;
                     countdownDisplay.setText("00min00sec"); // 初めからの状態に戻す
@@ -165,13 +185,59 @@ public class MainActivity extends AppCompatActivity {
         countDownTimer = new CountDownTimer(totalTimeMillis, 1000) {
             public void onTick(long millisUntilFinished) {
                 remainingMillis = millisUntilFinished;
+                long breatheInSec = (long) Float.parseFloat(breatheInInput.getText().toString()) * 1000;
+                long breatheOutSec = (long) Float.parseFloat(breatheOutInput.getText().toString()) * 1000;
+                long cycleMillis = breatheInSec + breatheOutSec;
+
+                if ((totalTimeMillis - millisUntilFinished) % cycleMillis < breatheInSec) {
+                    if (mediaPlayerBreatheOut.isPlaying()) {
+                        mediaPlayerBreatheOut.pause();
+                        mediaPlayerBreatheOut.seekTo(0); // 位置を先頭に戻す
+                    }
+                    if (!mediaPlayerBreatheIn.isPlaying()) {
+                        mediaPlayerBreatheIn.start();
+                    }
+                } else {
+                    if (mediaPlayerBreatheIn.isPlaying()) {
+                        mediaPlayerBreatheIn.pause();
+                        mediaPlayerBreatheIn.seekTo(0); // 位置を先頭に戻す
+                    }
+                    if (!mediaPlayerBreatheOut.isPlaying()) {
+                        mediaPlayerBreatheOut.start();
+                    }
+                }
+
                 countdownDisplay.setText(formatTime(millisUntilFinished / 1000));
             }
 
             public void onFinish() {
-                // カウントダウン終了時の処理
+                try {
+                    mediaPlayerBreatheIn.stop();
+                    mediaPlayerBreatheIn.prepare(); // ここを同期的に準備するように変更
+                    mediaPlayerBreatheOut.stop();
+                    mediaPlayerBreatheOut.prepare(); // ここも同期的に準備するように変更
+                } catch (IOException e) {
+                    e.printStackTrace(); // エラーが発生した場合にログに出力
+                }
+                resetToInitialState();
             }
         }.start();
+    }
+    private void resetToInitialState() {
+        if (isPlaying) {
+            countDownTimer.cancel();
+            try {
+                mediaPlayerBreatheIn.stop();
+                mediaPlayerBreatheIn.prepare(); // ここを同期的に準備するように変更
+                mediaPlayerBreatheOut.stop();
+                mediaPlayerBreatheOut.prepare(); // ここも同期的に準備するように変更
+            } catch (IOException e) {
+                e.printStackTrace(); // エラーが発生した場合にログに出力
+            }
+            isPlaying = false;
+            remainingMillis = 0;
+            countdownDisplay.setText("00min00sec");
+        }
     }
 
     private String formatTime(long timeInSeconds) {
