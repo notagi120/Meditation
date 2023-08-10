@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.SharedPreferences;
+
 public class MainActivity extends AppCompatActivity {
     private boolean isPlaying = false;
     private boolean isPaused = false;
@@ -36,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
         preparationInput = findViewById(R.id.preparation_input);
         totalTimeDisplay = findViewById(R.id.total_time_display);
         countdownDisplay = findViewById(R.id.countdown_display);
+        // 以下の行で値を読み込む
+        loadPreferences();
 
         playButton.setEnabled(false); // 初期状態ではplayボタンを無効化
 
@@ -101,6 +105,31 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+    }
+
+    //データ保存
+    private void savePreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("meditation", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putFloat("breathe_in", Float.parseFloat(breatheInInput.getText().toString()));
+        editor.putFloat("breathe_out", Float.parseFloat(breatheOutInput.getText().toString()));
+        editor.putInt("cycle", Integer.parseInt(cycleInput.getText().toString()));
+        editor.putFloat("preparation", Float.parseFloat(preparationInput.getText().toString()));
+        editor.apply();
+    }
+    //データ読み取り
+    private void loadPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("meditation", MODE_PRIVATE);
+        float breatheIn = sharedPreferences.getFloat("breathe_in", 0); // 0はデフォルト値
+        float breatheOut = sharedPreferences.getFloat("breathe_out", 0);
+        int cycle = sharedPreferences.getInt("cycle", 0);
+        float preparation = sharedPreferences.getFloat("preparation", 0);
+
+        breatheInInput.setText(String.valueOf(breatheIn));
+        breatheOutInput.setText(String.valueOf(breatheOut));
+        cycleInput.setText(String.valueOf(cycle));
+        preparationInput.setText(String.valueOf(preparation));
     }
 
     private long calculateTotalTimeMillis() {
