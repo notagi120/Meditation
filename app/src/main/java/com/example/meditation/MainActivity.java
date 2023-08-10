@@ -11,8 +11,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.media.MediaPlayer;
-
 public class MainActivity extends AppCompatActivity {
     private boolean isPlaying = false;
     private boolean isPaused = false;
@@ -23,9 +21,6 @@ public class MainActivity extends AppCompatActivity {
 
     private CountDownTimer countDownTimer;
     private long remainingMillis;
-
-    private MediaPlayer mediaPlayerIn, mediaPlayerOut;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,9 +36,6 @@ public class MainActivity extends AppCompatActivity {
         preparationInput = findViewById(R.id.preparation_input);
         totalTimeDisplay = findViewById(R.id.total_time_display);
         countdownDisplay = findViewById(R.id.countdown_display);
-
-        mediaPlayerIn = MediaPlayer.create(this, R.raw.down);
-        mediaPlayerOut = MediaPlayer.create(this, R.raw.up);
 
         playButton.setEnabled(false); // 初期状態ではplayボタンを無効化
 
@@ -134,59 +126,6 @@ public class MainActivity extends AppCompatActivity {
                 startCountdown(totalTimeMillis);
             }
         }.start();
-
-        playBreathingSound(Float.parseFloat(breatheInInput.getText().toString()),
-                Float.parseFloat(breatheOutInput.getText().toString()),
-                Integer.parseInt(cycleInput.getText().toString()));
-    }
-
-    private void playBreathingSound(final float breatheInSec, final float breatheOutSec, final int cycles) {
-        mediaPlayerIn.start();
-        mediaPlayerIn.setVolume(1, 1);
-        mediaPlayerIn.setLooping(true);
-        mediaPlayerOut.setLooping(true);
-
-        new CountDownTimer((long) (breatheInSec * 1000), 1000) {
-            int secondsLeft = (int) breatheInSec;
-
-            @Override
-            public void onTick(long millisUntilFinished) {
-                secondsLeft--;
-                if (secondsLeft <= 5) {
-                    float volume = (float) secondsLeft / 5;
-                    mediaPlayerIn.setVolume(volume, volume);
-                }
-            }
-
-            @Override
-            public void onFinish() {
-                mediaPlayerIn.stop();
-                mediaPlayerOut.start();
-                mediaPlayerOut.setVolume(1, 1);
-
-                new CountDownTimer((long) (breatheOutSec * 1000), 1000) {
-                    int secondsLeft = (int) breatheOutSec;
-
-                    @Override
-                    public void onTick(long millisUntilFinished) {
-                        secondsLeft--;
-                        if (secondsLeft <= 5) {
-                            float volume = (float) secondsLeft / 5;
-                            mediaPlayerOut.setVolume(volume, volume);
-                        }
-                    }
-
-                    @Override
-                    public void onFinish() {
-                        mediaPlayerOut.stop();
-                        // 次のサイクルへ
-                        if (cycles > 1) {
-                            playBreathingSound(breatheInSec, breatheOutSec, cycles - 1);
-                        }
-                    }
-                }.start();
-            }
-        }.start();
     }
 
     private void startCountdown(long totalTimeMillis) {
@@ -211,6 +150,4 @@ public class MainActivity extends AppCompatActivity {
         int sec = (int) timeInSeconds % 60;
         return String.format("%02dmin%02dsec", min, sec);
     }
-
-
 }
