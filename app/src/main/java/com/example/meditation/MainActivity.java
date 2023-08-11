@@ -101,9 +101,6 @@ public class MainActivity extends AppCompatActivity {
                     mediaPlayerBreatheIn.pause();
                     mediaPlayerBreatheOut.pause();
                     isPaused = true;
-//                } else if (isPlaying && isPaused) {
-//                    startCountdown(remainingMillis); // カウントダウンを再開
-//                    isPaused = false;
                 }
             }
         });
@@ -127,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //データ保存
-//データ保存
     private void savePreferences() {
         SharedPreferences sharedPreferences = getSharedPreferences("meditation", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -186,7 +182,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void startBreathingCycle() {
         float preparationSec = Float.parseFloat(preparationInput.getText().toString());
         final long totalTimeMillis = calculateTotalTimeMillis();
@@ -206,69 +201,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startCountdown(long totalTimeMillis) {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-        }
-
-        countDownTimer = new CountDownTimer(totalTimeMillis, 1000) {
-            public void onTick(long millisUntilFinished) {
-                remainingMillis = millisUntilFinished;
-                long breatheInSec = (long) Float.parseFloat(breatheInInput.getText().toString()) * 1000;
-                long breatheOutSec = (long) Float.parseFloat(breatheOutInput.getText().toString()) * 1000;
-                long cycleMillis = breatheInSec + breatheOutSec;
-
-                long timeInCurrentCycle = (totalTimeMillis - millisUntilFinished) % cycleMillis;
-
-                if (timeInCurrentCycle < breatheInSec) {
-                    if (mediaPlayerBreatheOut.isPlaying()) {
-                        mediaPlayerBreatheOut.pause();
-                        mediaPlayerBreatheOut.seekTo(0); // 位置を先頭に戻す
-                    }
-                    if (!mediaPlayerBreatheIn.isPlaying()) {
-                        mediaPlayerBreatheIn.start();
-                    }
-
-                    if (timeInCurrentCycle > breatheInSec - 5000) {
-                        // フェードアウトの開始
-                        float volume = (breatheInSec - timeInCurrentCycle) / 5000f;
-                        mediaPlayerBreatheIn.setVolume(volume, volume);
-                    } else {
-                        mediaPlayerBreatheIn.setVolume(1f, 1f);
-                    }
-                } else {
-                    if (mediaPlayerBreatheIn.isPlaying()) {
-                        mediaPlayerBreatheIn.pause();
-                        mediaPlayerBreatheIn.seekTo(0); // 位置を先頭に戻す
-                    }
-                    if (!mediaPlayerBreatheOut.isPlaying()) {
-                        mediaPlayerBreatheOut.start();
-                    }
-
-                    if (timeInCurrentCycle > breatheInSec + breatheOutSec - 5000) {
-                        // フェードアウトの開始
-                        float volume = (breatheInSec + breatheOutSec - timeInCurrentCycle) / 5000f;
-                        mediaPlayerBreatheOut.setVolume(volume, volume);
-                    } else {
-                        mediaPlayerBreatheOut.setVolume(1f, 1f);
-                    }
-                }
-
-                countdownDisplay.setText(formatTime(millisUntilFinished / 1000));
-            }
-
-            public void onFinish() {
-                try {
-                    mediaPlayerBreatheIn.stop();
-                    mediaPlayerBreatheIn.prepare(); // ここを同期的に準備するように変更
-                    mediaPlayerBreatheOut.stop();
-                    mediaPlayerBreatheOut.prepare(); // ここも同期的に準備するように変更
-                } catch (IOException e) {
-                    e.printStackTrace(); // エラーが発生した場合にログに出力
-                }
-                resetToInitialState();
-            }
-        }.start();
+        cancelExistingTimer();
+        initializeCountDownTimer(totalTimeMillis);
+        countDownTimer.start();
     }
+
     private void resetToInitialState() {
         if (isPlaying) {
             countDownTimer.cancel();
@@ -291,4 +228,66 @@ public class MainActivity extends AppCompatActivity {
         int sec = (int) timeInSeconds % 60;
         return String.format("%02dmin%02dsec", min, sec);
     }
+
+
+    private void cancelExistingTimer() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+    }
+
+    private void initializeCountDownTimer(long totalTimeMillis) {
+        countDownTimer = new CountDownTimer(totalTimeMillis, 1000) {
+            public void onTick(long millisUntilFinished) {
+                remainingMillis = millisUntilFinished;
+                long breatheInSec = (long) Float.parseFloat(breatheInInput.getText().toString()) * 1000;
+                long breatheOutSec = (long) Float.parseFloat(breatheOutInput.getText().toString()) * 1000;
+                long cycleMillis = breatheInSec + breatheOutSec;
+                manageBreathingCycle(totalTimeMillis, millisUntilFinished, breatheInSec, breatheOutSec, cycleMillis);
+                countdownDisplay.setText(formatTime(millisUntilFinished / 1000));
+            }
+            public void onFinish() {
+                resetToInitialState();
+            }
+        };
+    }
+
+    private void manageBreathingCycle(long totalTimeMillis, long millisUntilFinished, long breatheInSec, long breatheOutSec, long cycleMillis) {
+        long timeInCurrentCycle = (totalTimeMillis - millisUntilFinished) % cycleMillis;
+        // 吸う・吐くサイクルの管理ロジック
+        if (timeInCurrentCycle < breatheInSec) {
+            if (mediaPlayerBreatheOut.isPlaying()) {
+                mediaPlayerBreatheOut.pause();
+                mediaPlayerBreatheOut.seekTo(0); // 位置を先頭に戻す
+            }
+            if (!mediaPlayerBreatheIn.isPlaying()) {
+                mediaPlayerBreatheIn.start();
+            }
+
+            if (timeInCurrentCycle > breatheInSec - 5000) {
+                // フェードアウトの開始
+                float volume = (breatheInSec - timeInCurrentCycle) / 5000f;
+                mediaPlayerBreatheIn.setVolume(volume, volume);
+            } else {
+                mediaPlayerBreatheIn.setVolume(1f, 1f);
+            }
+        } else {
+            if (mediaPlayerBreatheIn.isPlaying()) {
+                mediaPlayerBreatheIn.pause();
+                mediaPlayerBreatheIn.seekTo(0); // 位置を先頭に戻す
+            }
+            if (!mediaPlayerBreatheOut.isPlaying()) {
+                mediaPlayerBreatheOut.start();
+            }
+
+            if (timeInCurrentCycle > breatheInSec + breatheOutSec - 5000) {
+                // フェードアウトの開始
+                float volume = (breatheInSec + breatheOutSec - timeInCurrentCycle) / 5000f;
+                mediaPlayerBreatheOut.setVolume(volume, volume);
+            } else {
+                mediaPlayerBreatheOut.setVolume(1f, 1f);
+            }
+        }
+    }
+
 }
